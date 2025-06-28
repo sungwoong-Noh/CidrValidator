@@ -68,8 +68,17 @@ class IpAddressTest {
         IpAddress ip1 = IpAddress.fromString("192.168.1.1");
         IpAddress ip2 = IpAddress.fromString("192.168.1.1");
         IpAddress ip3 = IpAddress.fromString("192.168.1.2");
-        
+
         assertEquals(ip1, ip2);
         assertNotEquals(ip1, ip3);
+    }
+
+    @Test
+    @DisplayName("IP 해시 코드 테스트")
+    void hassCode() {
+        IpAddress ip1 = IpAddress.fromString("192.168.1.1");
+        IpAddress ip2 = IpAddress.fromString("192.168.1.1");
+
+        assertEquals(ip1.hashCode(), ip2.hashCode());
     }
 } 

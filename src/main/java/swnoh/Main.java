@@ -19,7 +19,7 @@ public class Main {
         System.out.println("\n=== CIDR 정규화에서 long 활용 ===");
         
         // 정규화 과정에서 long이 어떻게 사용되는지
-        CidrBlock cidr = new CidrBlock("192.168.1.100/24");
+        CidrBlock cidr = CidrBlock.of("192.168.1.100/24");
         System.out.printf("원본 CIDR: %s\n", cidr.toString());
         System.out.printf("정규화 결과: %s\n", cidr.normalize());
         
