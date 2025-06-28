@@ -6,7 +6,7 @@ import java.util.List;
 public class CidrBlock {
 
     // 큰 서브넷 제한 (최대 1000개 IP까지 허용)
-    private static final int MAX_IP_COUNT = 1000;
+    private static final int MAX_IP_COUNT = 1024;
 
     private final IpAddress ipAddress;
 
@@ -139,6 +139,60 @@ public class CidrBlock {
         return result;
     }
 
+
+    /**
+     * CIDR 블록을 지정된 prefix length로 분할합니다.
+     * 
+     * @param newPrefixLength 분할할 새로운 prefix length (현재보다 커야 함)
+     * @return 분할된 CIDR 블록들의 리스트
+     * @throws IllegalArgumentException 잘못된 prefix length인 경우
+     */
+    public List<CidrBlock> split(int newPrefixLength) {
+
+        // /32는 분할할 수 없음
+        if (prefixLength == 32) {
+            throw new IllegalArgumentException("단일 호스트(/32)는 분할할 수 없습니다");
+        }
+
+        // 입력 유효성 검증
+        if (newPrefixLength <= prefixLength) {
+            throw new IllegalArgumentException(
+                String.format("새로운 prefix length(%d)는 현재 prefix length(%d)보다 커야 합니다", 
+                             newPrefixLength, prefixLength));
+        }
+        
+        if (newPrefixLength < 0 || newPrefixLength > 32) {
+            throw new IllegalArgumentException("Prefix length는 0-32 범위여야 합니다: " + newPrefixLength);
+        }
+
+        // 분할할 서브넷 개수 계산
+        int subnetBits = newPrefixLength - prefixLength;
+        int subnetCount = 1 << subnetBits;  // 2^subnetBits
+        
+        // 각 서브넷의 크기 계산
+        int hostBits = 32 - newPrefixLength;
+        long subnetSize = 1L << hostBits;   // 2^hostBits
+        
+        List<CidrBlock> result = new ArrayList<>(subnetCount);
+        long baseNetworkAddress = getNetworkAddress();
+        
+        // 각 서브넷 생성
+        for (int i = 0; i < subnetCount; i++) {
+
+            // 서브넷의 네트워크 주소 계산
+            long subnetNetworkAddress = baseNetworkAddress + (i * subnetSize);
+
+            IpAddress subnetIp = IpAddress.fromLong(subnetNetworkAddress);
+
+            String subnetCidr = subnetIp.toString() + "/" + newPrefixLength;
+
+            result.add(CidrBlock.of(subnetCidr));
+        }
+        
+        return result;
+    }
+
+
     /**
      * CIDR 블록의 네트워크 주소를 계산합니다.
      *
@@ -155,6 +209,9 @@ public class CidrBlock {
      * @return 서브넷 마스크 (long 형식)
      */
     private long getMask() {
+
+        // 0xFFFFFFFFL = 4294967295L
+        // 이진수: 11111111 11111111 11111111 11111111 (32개의 1)
         return (0xFFFFFFFFL << (32 - prefixLength)) & 0xFFFFFFFFL;
     }
 

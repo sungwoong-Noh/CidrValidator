@@ -3,6 +3,7 @@ package swnoh.cidr;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -269,5 +270,112 @@ class CidrBlockTest {
         assertThrows(IllegalArgumentException.class, () -> {
             cidr.getAllIpAddresses();
         }, "큰 서브넷에 대해서는 제한이 있어야 합니다");
+    }
+
+    @Test
+    @DisplayName("CIDR 분할 테스트 - /24를 /25로 분할")
+    void testSplit_24to25() {
+
+        CidrBlock cidrBlock = CidrBlock.of("192.168.1.0/24");
+        List<CidrBlock> subnets = cidrBlock.split(25);
+
+        assertEquals(2, subnets.size());
+        assertEquals("192.168.1.0/25", subnets.get(0).toString());
+        assertEquals("192.168.1.128/25", subnets.get(1).toString());
+    }
+
+    @Test
+    @DisplayName("CIDR 분할 테스트 - /16을 /24로 분할")
+    void testSplit_16to24() {
+        CidrBlock cidrBlock = CidrBlock.of("10.0.0.0/16");
+        List<CidrBlock> subnets = cidrBlock.split(24);
+
+        assertEquals(256, subnets.size());
+        assertEquals("10.0.0.0/24", subnets.get(0).toString());
+        assertEquals("10.0.1.0/24", subnets.get(1).toString());
+        assertEquals("10.0.255.0/24", subnets.get(255).toString());
+    }
+
+    @Test
+    @DisplayName("CIDR 분할 테스트 - /32는 분할 불가")
+    void testSplit_32() {
+
+        CidrBlock cidrBlock = CidrBlock.of("10.0.0.0/32");
+
+        assertThrows(IllegalArgumentException.class, () -> cidrBlock.split(32));
+    }
+
+    @Test
+    @DisplayName("CIDR 분할 테스트 - 분할된 서브넷들의 유효성 검증")
+    void testSplit_ValidateSubnets() {
+
+        CidrBlock cidrBlock = CidrBlock.of("192.168.0.0/20");
+        List<CidrBlock> subnets = cidrBlock.split(22);
+
+        assertEquals(4, subnets.size());
+
+        for (int i = 0; i < subnets.size(); i++) {
+            for (int j = i + 1; j < subnets.size(); j++) {
+
+                CidrBlock subnet1 = subnets.get(i);
+                CidrBlock subnet2 = subnets.get(j);
+
+                // 분할된 서브넷 들은 서로 겹치지 않아야 함
+                List<String> ips1 = subnet1.getAllIpAddresses();
+                List<String> ips2 = subnet2.getAllIpAddresses();
+
+                // 각 서브넷의 첫 번째 IP가 서로 포함되지 않아야 함
+                if (!ips1.isEmpty() && !ips2.isEmpty()) {
+                    assertFalse(subnet1.contains(ips2.getFirst()));
+                    assertFalse(subnet2.contains(ips1.getFirst()));
+                }
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("CIDR 분할 테스트 - 모든 IP가 커버되는지 확인")
+    void testSplit_CompleteCoverage() {
+        //64개 ip
+        CidrBlock originalCidr = CidrBlock.of("192.168.1.0/26");
+        List<CidrBlock> subnets = originalCidr.split(28);
+
+        // 가져올 때는 네트워크와 브로드캐스트 주소를 제외한 IP 목록을 가져옴 => -2 개
+        List<String> originalIps = originalCidr.getAllIpAddresses();
+
+        List<String> splitIps = new ArrayList<>();
+
+        for (CidrBlock subnet : subnets) {
+            // 각 서브넷의 모든 IP 주소를 가져옴 => 네트워크 주소와 브로드캐스트 주소를 제외한 IP 목록, -2개 씩
+            splitIps.addAll(subnet.getAllIpAddresses());
+        }
+
+        int networkAndBroadIpsCount = 2 * subnets.size() - 2;
+
+        assertEquals(originalIps.size(), splitIps.size() + networkAndBroadIpsCount); // 네트워크 주소와 브로드캐스트 주소 제외
+
+    }
+
+    @Test
+    @DisplayName("CIDR 분할 - 기본 케이스만")
+    void testSplit_Basic() {
+        CidrBlock cidr = CidrBlock.of("192.168.1.0/24");
+        List<CidrBlock> subnets = cidr.split(26);
+        
+        assertEquals(4, subnets.size());
+        assertEquals("192.168.1.0/26", subnets.get(0).toString());
+        assertEquals("192.168.1.64/26", subnets.get(1).toString());
+        assertEquals("192.168.1.128/26", subnets.get(2).toString());
+        assertEquals("192.168.1.192/26", subnets.get(3).toString());
+    }
+
+    @Test
+    @DisplayName("CIDR 분할 - 예외 처리")
+    void testSplit_Exceptions() {
+        CidrBlock cidr = CidrBlock.of("192.168.1.0/24");
+        
+        assertThrows(IllegalArgumentException.class, () -> cidr.split(23)); // 더 큰 네트워크
+        assertThrows(IllegalArgumentException.class, () -> cidr.split(24)); // 같은 크기
+        assertThrows(IllegalArgumentException.class, () -> cidr.split(33)); // 범위 초과
     }
 }
