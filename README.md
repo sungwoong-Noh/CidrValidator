@@ -106,6 +106,15 @@ List<CidrConflict> conflicts = CidrValidator.findConflicts(cidrs);
 // CidrConflict 객체에는 충돌 유형, 관련 CIDR들, 충돌 영역 정보 포함
 ```
 
+### 8. CIDR 대역 포함 관계 분석(예정)
+다른 CIDR에 완전히 포함되는지, 부분적으로 겹치는지, 완전히 분리되어 있는지 분석합니다.
+포함 관계는 열거형 형태로 제공됩니다. 
+```java
+enum Relationship { CONTAINS, CONTAINED_BY, OVERLAPS, DISJOINT }
+Relationship analyzeRelationship(String cidr1, String cidr2);
+```
+
+
 ## 🛠️ 사용 방법
 
 ### 현재 사용 가능한 기능
