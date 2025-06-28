@@ -15,7 +15,12 @@ public class IpAddress {
         this.octets = octets.clone();
     }
 
-    
+    /**
+     * IP 주소 문자열을 파싱하고 유효성을 검사합니다.
+     *
+     * @param ipAddress
+     * @return
+     */
     private int[] parseAndValidate(String ipAddress) {
         String[] parts = ipAddress.split("\\.");
         if (parts.length != 4) {
@@ -38,7 +43,12 @@ public class IpAddress {
         }
         return result;
     }
-    
+
+    /**
+     * IP 주소를 long 타입으로 변환합니다.
+     *
+     * @return
+     */
     public long toLong() {
         return ((long) octets[0] << 24) | 
                ((long) octets[1] << 16) | 

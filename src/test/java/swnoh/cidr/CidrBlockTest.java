@@ -2,6 +2,9 @@ package swnoh.cidr;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
+
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class CidrBlockTest {
@@ -155,5 +158,116 @@ class CidrBlockTest {
         assertFalse(cidr.contains("192.168.3.0"));
         assertTrue(cidr.contains(ipInside));
         assertFalse(cidr.contains(ipOutside));
+    }
+
+    @Test
+    @DisplayName("IP 목록 조회 - /30 서브넷 (4개 IP, 사용가능 2개)")
+    void getAllIpAddresses_Subnet30() {
+        CidrBlock cidr = CidrBlock.of("192.168.1.0/30");
+        List<String> ips = cidr.getAllIpAddresses();
+
+        // /30은 4개 IP: .0(네트워크), .1(사용가능), .2(사용가능), .3(브로드캐스트) => 사용가능 IP는 2개
+        assertEquals(2, ips.size());
+        assertTrue(ips.contains("192.168.1.1"));
+        assertTrue(ips.contains("192.168.1.2"));
+        assertFalse(ips.contains("192.168.1.0")); // 네트워크 주소
+        assertFalse(ips.contains("192.168.1.4")); // 브로드캐스트 주소
+    }
+
+    @Test
+    @DisplayName("IP 목록 조회 - /31 서브넷 (2개 IP, 포인트-투-포인트 링크)")
+    void getAllIpAddress_Subnet31() {
+        CidrBlock cidr = CidrBlock.of("192.168.1.0/31");
+        List<String> ips = cidr.getAllIpAddresses();
+
+        // /31은 포인트-투-포인트 링크로 네트워크, 브로드캐스트 개념이 없음(RFC 3021)
+        assertEquals(2, ips.size());
+        assertTrue(ips.contains("192.168.1.0"));
+        assertTrue(ips.contains("192.168.1.1"));
+        assertFalse(ips.contains("192.168.1.2"));
+        assertFalse(ips.contains("192.168.1.3"));
+    }
+
+    @Test
+    @DisplayName("IP 목록 조회 - /32 서브넷 (단일 호스트)")
+    void getAllIpAddress_Subnet32() {
+        CidrBlock cidr = CidrBlock.of("192.168.1.100/32");
+        List<String> ips = cidr.getAllIpAddresses();
+
+        // /32는 단일 호스트
+        assertEquals(1, ips.size());
+        assertTrue(ips.contains("192.168.1.100"));
+    }
+
+    @Test
+    @DisplayName("IP 목록 조회 - /29 서브넷 (8개 IP, 사용가능 6개)")
+    void getAllIpAddress_Subnet29() {
+        CidrBlock cidr = CidrBlock.of("192.168.1.0/29");
+        List<String> ips = cidr.getAllIpAddresses();
+
+        // /29는 8개 IP: .0(네트워크), .1.2.3.4.5.6(사용가능), .7(브로드캐스트)
+        assertEquals(6, ips.size());
+        assertFalse(ips.contains("192.168.1.0"));
+        assertTrue(ips.contains("192.168.1.1"));
+        assertTrue(ips.contains("192.168.1.2"));
+        assertTrue(ips.contains("192.168.1.3"));
+        assertTrue(ips.contains("192.168.1.4"));
+        assertTrue(ips.contains("192.168.1.5"));
+        assertTrue(ips.contains("192.168.1.6"));
+        assertFalse(ips.contains("192.168.1.7"));
+
+    }
+
+    @Test
+    @DisplayName("IP 목록 조회 - /28 서브넷 순서 확인")
+    void testGetAllIpAddresses_OrderedList() {
+        CidrBlock cidr = CidrBlock.of("10.0.0.0/28");
+        List<String> ips = cidr.getAllIpAddresses();
+
+        // /28은 총 16개 IP, 사용가능한 것은 14개
+        assertEquals(14, ips.size());
+
+        // 순서가 올바른지 확인
+        assertEquals("10.0.0.1", ips.get(0));   // 첫 번째
+        assertEquals("10.0.0.14", ips.get(13)); // 마지막
+
+        // 연속성 확인
+        for (int i = 0; i < ips.size() - 1; i++) {
+            IpAddress current = IpAddress.fromString(ips.get(i));
+            IpAddress next = IpAddress.fromString(ips.get(i + 1));
+            assertEquals(1, next.toLong() - current.toLong());
+        }
+    }
+
+    @Test
+    @DisplayName("IP 목록 조회 - 성능 테스트 (/24 서브넷)")
+    void testGetAllIpAddresses_Performance() {
+        CidrBlock cidr = CidrBlock.of("192.168.1.0/24");
+
+        long startTime = System.currentTimeMillis();
+        List<String> ips = cidr.getAllIpAddresses();
+        long endTime = System.currentTimeMillis();
+
+        // /24는 254개의 사용 가능한 IP
+        assertEquals(254, ips.size());
+
+        // 성능 확인 (1초 이내 완료되어야 함)
+        assertTrue(endTime - startTime < 1000, "IP 목록 조회가 너무 오래 걸립니다: " + (endTime - startTime) + "ms");
+
+        // 첫 번째와 마지막 IP 확인
+        assertEquals("192.168.1.1", ips.get(0));
+        assertEquals("192.168.1.254", ips.get(253));
+    }
+
+    @Test
+    @DisplayName("IP 목록 조회 - 큰 서브넷 제한 (/16 이상) : 어떤식으로 대역을 제한할지 고민 필요")
+    void testGetAllIpAddresses_LargeSubnetLimit() {
+        // /16 서브넷은 65534개의 호스트 IP를 가지므로 제한이 필요할 수 있음
+        CidrBlock cidr = CidrBlock.of("10.0.0.0/16");
+
+        // 큰 서브넷의 경우 예외를 던지거나 제한을 둘 수 있음
+        assertThrows(IllegalArgumentException.class, () -> {
+            cidr.getAllIpAddresses();
+        }, "큰 서브넷에 대해서는 제한이 있어야 합니다");
     }
 }
