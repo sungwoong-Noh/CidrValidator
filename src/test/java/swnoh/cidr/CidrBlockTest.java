@@ -53,5 +53,6 @@ class CidrBlockTest {
         assertThrows(IllegalArgumentException.class, () -> CidrBlock.of("192.168.1.0"));
         assertThrows(IllegalArgumentException.class, () -> CidrBlock.of("192.168.1.0/33"));
         assertThrows(IllegalArgumentException.class, () -> CidrBlock.of("192.168.1.0/-1"));
+        assertThrows(IllegalArgumentException.class, () -> CidrBlock.of("192.168.1.266/24"));
     }
 }
