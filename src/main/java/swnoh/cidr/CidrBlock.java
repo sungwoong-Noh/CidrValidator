@@ -194,16 +194,6 @@ public class CidrBlock {
 
 
     /**
-     * CIDR 블록의 네트워크 주소를 계산합니다.
-     *
-     * @return 네트워크 주소 (long 형식)
-     */
-    private long getNetworkAddress() {
-        long mask = getMask();
-        return ipAddress.toLong() & mask;
-    }
-
-    /**
      * CIDR 블록의 서브넷 마스크를 계산합니다.
      *
      * @return 서브넷 마스크 (long 형식)
@@ -213,6 +203,27 @@ public class CidrBlock {
         // 0xFFFFFFFFL = 4294967295L
         // 이진수: 11111111 11111111 11111111 11111111 (32개의 1)
         return (0xFFFFFFFFL << (32 - prefixLength)) & 0xFFFFFFFFL;
+    }
+
+
+    /**
+     * CIDR 블록의 네트워크 주소를 계산합니다.
+     *
+     * @return 네트워크 주소 (long 형식)
+     */
+    private long getNetworkAddress() {
+        long mask = getMask();
+        return ipAddress.toLong() & mask;
+    }
+
+
+    /**
+     * CIDR의 prefix length를 반환합니다.
+     * 
+     * @return prefix length (0-32)
+     */
+    public int getPrefixLength() {
+        return prefixLength;
     }
 
     @Override

@@ -221,7 +221,7 @@ implementation("com.sungwoong:cidr-validator:1.0.0")
 - [x] CIDR 대역 IP 목록 조회
 
 ### Phase 2: 고급 계산 기능 구현 🔄
-- [ ] CIDR 분할 (split, splitInto)
+- [x] CIDR 분할 (split, splitInto)
 - [ ] CIDR 병합 (merge)
 - [ ] 네트워크/브로드캐스트 주소 계산
 
