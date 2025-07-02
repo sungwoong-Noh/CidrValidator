@@ -4,6 +4,7 @@ package swnoh.cidr;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class CidrUtils {
 
@@ -29,7 +30,7 @@ public class CidrUtils {
         List<CidrBlock> normalized = cidrBlocks.stream()
                 .map(cidr -> CidrBlock.of(cidr.normalize()))
                 .sorted(new CidrComparator())
-                .toList();
+                .collect(Collectors.toList());
 
         // 2. 재귀적으로 병합 수행
         return performMerge(normalized);
