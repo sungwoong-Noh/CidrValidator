@@ -326,8 +326,8 @@ class CidrBlockTest {
 
                 // 각 서브넷의 첫 번째 IP가 서로 포함되지 않아야 함
                 if (!ips1.isEmpty() && !ips2.isEmpty()) {
-                    assertFalse(subnet1.contains(ips2.getFirst()));
-                    assertFalse(subnet2.contains(ips1.getFirst()));
+                    assertFalse(subnet1.contains(ips2.get(0)));
+                    assertFalse(subnet2.contains(ips1.get(0)));
                 }
             }
         }
