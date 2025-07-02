@@ -8,7 +8,7 @@ on:
     branches: [ main ]
 
 env:
-  JAVA_VERSION: '11'
+  JAVA_VERSION: '17'
   JAVA_DISTRIBUTION: 'temurin'
 
 jobs:
@@ -18,7 +18,7 @@ jobs:
     
     strategy:
       matrix:
-        java-version: [11, 17, 21]
+        java-version: [17, 21]
     
     steps:
     - name: 📥 Checkout code

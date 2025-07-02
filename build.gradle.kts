@@ -11,15 +11,20 @@ repositories {
 }
 
 dependencies {
-    testImplementation(platform("org.junit:junit-bom:5.10.0"))
+    testImplementation platform("org.junit:junit-bom:5.10.0")
     testImplementation("org.junit.jupiter:junit-jupiter")
 }
 
 java {
     withSourcesJar()
     withJavadocJar()
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+    
+    // Java 17 toolchain 설정
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(17))
+    }
 }
 
 tasks.test {
@@ -33,9 +38,18 @@ tasks.test {
     
     // JUnit 리포트 생성
     reports {
-        junitXml.required.set(true)
-        html.required.set(true)
+        junitXml {
+            required.set(true)
+        }
+        html {
+            required.set(true)
+        }
     }
+}
+
+// Java 17 컴파일러 설정
+tasks.withType<JavaCompile> {
+    options.release.set(17)
 }
 
 tasks.javadoc {
@@ -43,7 +57,7 @@ tasks.javadoc {
         (options as StandardJavadocDocletOptions).addBooleanOption("html5", true)
     }
     options.encoding = "UTF-8"
-    source = sourceSets.main.get().allJava
+    source(sourceSets.main.get().allJava)
 }
 
 publishing {
