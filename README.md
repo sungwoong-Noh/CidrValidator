@@ -473,7 +473,6 @@ MIT License - 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
 - **네트워킹 교육 및 학습**
 
 ---
-**Made with ❤️ by Network Engineers, for Network Engineers**
 
 ## 📦 Installation
 
