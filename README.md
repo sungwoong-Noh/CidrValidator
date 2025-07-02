@@ -474,3 +474,47 @@ MIT License - 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
 
 ---
 **Made with ❤️ by Network Engineers, for Network Engineers**
+
+## 📦 Installation
+
+### Gradle (Kotlin DSL)
+```kotlin
+repositories {
+    mavenCentral()
+    maven { url = uri("https://jitpack.io") }
+}
+
+dependencies {
+    implementation("com.github.nohsw:cidr-validator:1.0.0")
+}
+```
+
+### Gradle (Groovy)
+```groovy
+repositories {
+    mavenCentral()
+    maven { url 'https://jitpack.io' }
+}
+
+dependencies {
+    implementation 'com.github.nohsw:cidr-validator:1.0.0'
+}
+```
+
+### Maven
+```xml
+<repositories>
+    <repository>
+        <id>jitpack.io</id>
+        <url>https://jitpack.io</url>
+    </repository>
+</repositories>
+
+<dependency>
+    <groupId>com.github.nohsw</groupId>
+    <artifactId>cidr-validator</artifactId>
+    <version>1.0.0</version>
+</dependency>
+```
+
+[![](https://jitpack.io/v/nohsw/cidr-validator.svg)](https://jitpack.io/#nohsw/cidr-validator)
