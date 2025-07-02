@@ -48,7 +48,7 @@ publishing {
             pom {
                 name.set("CIDR Validator")
                 description.set("A comprehensive Java library for CIDR notation validation, calculation, and normalization")
-                url.set("https://github.com/sungwoong-Noh/cidr-validator")
+                url.set("https://github.com/nohsw/cidr-validator")
                 
                 licenses {
                     license {
@@ -66,9 +66,9 @@ publishing {
                 }
                 
                 scm {
-                    connection.set("scm:git:git://github.com/sungwoong-Noh/cidr-validator.git")
-                    developerConnection.set("scm:git:ssh://github.com/sungwoong-Noh/cidr-validator.git")
-                    url.set("https://github.com/sungwoong-Noh/cidr-validator")
+                    connection.set("scm:git:git://github.com/nohsw/cidr-validator.git")
+                    developerConnection.set("scm:git:ssh://github.com/nohsw/cidr-validator.git")
+                    url.set("https://github.com/nohsw/cidr-validator")
                 }
             }
         }
