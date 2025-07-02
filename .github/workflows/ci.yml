@@ -7,6 +7,9 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+
 env:
   JAVA_VERSION: '17'
   JAVA_DISTRIBUTION: 'temurin'
@@ -15,6 +18,10 @@ jobs:
   test:
     name: Test on JDK ${{ matrix.java-version }}
     runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      actions: write
     
     strategy:
       matrix:
@@ -69,6 +76,10 @@ jobs:
     name: Build and Package
     runs-on: ubuntu-latest
     needs: test
+    
+    permissions:
+      contents: read
+      actions: write
     
     steps:
     - name: 📥 Checkout code
