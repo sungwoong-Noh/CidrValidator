@@ -11,7 +11,7 @@ repositories {
 }
 
 dependencies {
-    testImplementation platform("org.junit:junit-bom:5.10.0")
+    testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
 }
 
@@ -20,36 +20,15 @@ java {
     withJavadocJar()
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
-    
-    // Java 17 toolchain 설정
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(17))
-    }
 }
 
 tasks.test {
     useJUnitPlatform()
     
-    // 테스트 결과를 항상 출력
     testLogging {
         events("passed", "skipped", "failed")
         exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
     }
-    
-    // JUnit 리포트 생성
-    reports {
-        junitXml {
-            required.set(true)
-        }
-        html {
-            required.set(true)
-        }
-    }
-}
-
-// Java 17 컴파일러 설정
-tasks.withType<JavaCompile> {
-    options.release.set(17)
 }
 
 tasks.javadoc {
@@ -57,7 +36,6 @@ tasks.javadoc {
         (options as StandardJavadocDocletOptions).addBooleanOption("html5", true)
     }
     options.encoding = "UTF-8"
-    source(sourceSets.main.get().allJava)
 }
 
 publishing {
