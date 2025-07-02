@@ -378,5 +378,4 @@ class CidrBlockTest {
         assertThrows(IllegalArgumentException.class, () -> cidr.split(24)); // 같은 크기
         assertThrows(IllegalArgumentException.class, () -> cidr.split(33)); // 범위 초과
     }
-
 }
