@@ -216,6 +216,159 @@ public class CidrBlock {
         return ipAddress.toLong() & mask;
     }
 
+    // Phase2: 네트워크/브로드캐스트 주소 계산 기능 추가
+
+    /**
+     * CIDR 블록의 네트워크 주소를 반환합니다.
+     * 네트워크 주소는 서브넷의 첫 번째 주소로, 라우팅에 사용됩니다.
+     * 
+     * @return 네트워크 주소 문자열 (예: "192.168.1.0")
+     */
+    public String getNetworkAddressString() {
+        long network = getNetworkAddress();
+        return IpAddress.fromLong(network).toString();
+    }
+
+    /**
+     * CIDR 블록의 브로드캐스트 주소를 반환합니다.
+     * 브로드캐스트 주소는 서브넷의 마지막 주소로, 해당 네트워크의 모든 호스트에게 전송하는 데 사용됩니다.
+     * 
+     * 참고: /31, /32 서브넷에서는 브로드캐스트 개념이 적용되지 않습니다.
+     * - /32: 단일 호스트이므로 자기 자신이 브로드캐스트 주소
+     * - /31: 포인트-투-포인트 링크로 브로드캐스트 개념 없음 (RFC 3021)
+     * 
+     * @return 브로드캐스트 주소 문자열 (예: "192.168.1.255")
+     */
+    public String getBroadcastAddress() {
+        if (prefixLength == 32) {
+            // /32: 단일 호스트 - 자기 자신이 브로드캐스트
+            return ipAddress.toString();
+        }
+        
+        if (prefixLength == 31) {
+            // /31: 포인트-투-포인트 링크 - 더 큰 주소가 브로드캐스트 역할
+            long network = getNetworkAddress();
+            return IpAddress.fromLong(network + 1).toString();
+        }
+        
+        // 일반적인 경우: 네트워크 주소 + (호스트 비트가 모두 1인 값)
+        long network = getNetworkAddress();
+        int hostBits = 32 - prefixLength;
+        long hostMask = (1L << hostBits) - 1; // 호스트 부분의 모든 비트를 1로
+        long broadcast = network | hostMask;
+        
+        return IpAddress.fromLong(broadcast).toString();
+    }
+
+    /**
+     * CIDR 블록의 서브넷 마스크를 반환합니다.
+     * 서브넷 마스크는 네트워크 부분과 호스트 부분을 구분하는 데 사용됩니다.
+     * 
+     * @return 서브넷 마스크 문자열 (예: "255.255.255.0")
+     */
+    public String getSubnetMask() {
+        long mask = getMask();
+        return IpAddress.fromLong(mask).toString();
+    }
+
+    /**
+     * CIDR 블록의 총 IP 주소 개수를 반환합니다.
+     * 이는 네트워크 주소와 브로드캐스트 주소를 포함한 모든 IP 개수입니다.
+     * 
+     * @return 총 IP 개수 (2^호스트비트수)
+     */
+    public long getTotalIpCount() {
+        int hostBits = 32 - prefixLength;
+        return 1L << hostBits;
+    }
+
+    /**
+     * CIDR 블록의 사용 가능한 호스트 IP 개수를 반환합니다.
+     * 
+     * 계산 규칙:
+     * - /32: 1개 (단일 호스트)
+     * - /31: 2개 (포인트-투-포인트 링크, RFC 3021)
+     * - 그 외: 총 IP 개수 - 2 (네트워크 주소와 브로드캐스트 주소 제외)
+     * 
+     * @return 사용 가능한 호스트 IP 개수
+     */
+    public long getUsableIpCount() {
+        if (prefixLength == 32) {
+            return 1L; // 단일 호스트
+        }
+        
+        if (prefixLength == 31) {
+            return 2L; // 포인트-투-포인트 링크
+        }
+        
+        return getTotalIpCount() - 2L; // 네트워크와 브로드캐스트 제외
+    }
+
+    /**
+     * CIDR 블록의 첫 번째 사용 가능한 호스트 IP 주소를 반환합니다.
+     * 
+     * @return 첫 번째 사용 가능한 IP 주소 문자열
+     */
+    public String getFirstUsableIp() {
+        if (prefixLength == 32) {
+            // /32: 단일 호스트
+            return ipAddress.toString();
+        }
+        
+        if (prefixLength == 31) {
+            // /31: 네트워크 주소가 첫 번째 사용 가능한 IP
+            return getNetworkAddressString();
+        }
+        
+        // 일반적인 경우: 네트워크 주소 + 1
+        long network = getNetworkAddress();
+        return IpAddress.fromLong(network + 1).toString();
+    }
+
+    /**
+     * CIDR 블록의 마지막 사용 가능한 호스트 IP 주소를 반환합니다.
+     * 
+     * @return 마지막 사용 가능한 IP 주소 문자열
+     */
+    public String getLastUsableIp() {
+        if (prefixLength == 32) {
+            // /32: 단일 호스트
+            return ipAddress.toString();
+        }
+        
+        if (prefixLength == 31) {
+            // /31: 브로드캐스트 주소가 마지막 사용 가능한 IP
+            return getBroadcastAddress();
+        }
+        
+        // 일반적인 경우: 브로드캐스트 주소 - 1
+        long network = getNetworkAddress();
+        int hostBits = 32 - prefixLength;
+        long hostMask = (1L << hostBits) - 1;
+        long broadcast = network | hostMask;
+        
+        return IpAddress.fromLong(broadcast - 1).toString();
+    }
+
+    /**
+     * CIDR 블록의 상세 정보를 반환합니다.
+     * 네트워크 주소, 브로드캐스트 주소, 서브넷 마스크, IP 개수 등을 포함합니다.
+     * 
+     * @return CIDR 블록 상세 정보 문자열
+     */
+    public String getDetailedInfo() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("CIDR: ").append(toString()).append("\n");
+        sb.append("네트워크 주소: ").append(getNetworkAddressString()).append("\n");
+        sb.append("브로드캐스트 주소: ").append(getBroadcastAddress()).append("\n");
+        sb.append("서브넷 마스크: ").append(getSubnetMask()).append("\n");
+        sb.append("첫 번째 사용가능 IP: ").append(getFirstUsableIp()).append("\n");
+        sb.append("마지막 사용가능 IP: ").append(getLastUsableIp()).append("\n");
+        sb.append("총 IP 개수: ").append(getTotalIpCount()).append("\n");
+        sb.append("사용가능 IP 개수: ").append(getUsableIpCount());
+        
+        return sb.toString();
+    }
 
     /**
      * CIDR의 prefix length를 반환합니다.
