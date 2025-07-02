@@ -1,0 +1,271 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  JAVA_VERSION: '17'
+  JAVA_DISTRIBUTION: 'temurin'
+
+jobs:
+  test:
+    name: Test on JDK ${{ matrix.java-version }}
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        java-version: [17, 21]
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: ☕ Set up JDK ${{ matrix.java-version }}
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ matrix.java-version }}
+        distribution: ${{ env.JAVA_DISTRIBUTION }}
+        
+    - name: 📦 Cache Gradle packages
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+          
+    - name: 🔧 Grant execute permission for gradlew
+      run: chmod +x gradlew
+      
+    - name: 🧪 Run tests
+      run: ./gradlew test --info
+      
+    - name: 📊 Display test results
+      if: always()
+      run: |
+        echo "📋 Test Summary for JDK ${{ matrix.java-version }}:"
+        if [ -d "build/test-results/test" ]; then
+          echo "✅ Test results directory found"
+          find build/test-results/test -name "*.xml" | wc -l | xargs echo "Test result files:"
+        else
+          echo "❌ No test results found"
+        fi
+      
+    - name: 📤 Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results-jdk-${{ matrix.java-version }}
+        path: build/test-results/test/
+        retention-days: 7
+
+  build:
+    name: Build and Package
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: ☕ Set up JDK ${{ env.JAVA_VERSION }}
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ env.JAVA_VERSION }}
+        distribution: ${{ env.JAVA_DISTRIBUTION }}
+        
+    - name: 📦 Cache Gradle packages
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+          
+    - name: 🔧 Grant execute permission for gradlew
+      run: chmod +x gradlew
+      
+    - name: 🏗️ Build project
+      run: ./gradlew build -x test
+      
+    - name: 📚 Generate Javadoc
+      run: ./gradlew javadoc
+      
+    - name: 📋 Show build artifacts
+      run: |
+        echo "🎁 Generated artifacts:"
+        ls -la build/libs/
+        echo "📚 Javadoc generated:"
+        ls -la build/docs/javadoc/ || echo "No javadoc found"
+      
+    - name: 📤 Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-artifacts
+        path: |
+          build/libs/*.jar
+          build/docs/javadoc/
+        retention-days: 30
+
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: [test, build]
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    permissions:
+      contents: write
+      packages: write
+      
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: ☕ Set up JDK ${{ env.JAVA_VERSION }}
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ env.JAVA_VERSION }}
+        distribution: ${{ env.JAVA_DISTRIBUTION }}
+        
+    - name: 📦 Cache Gradle packages
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+          
+    - name: 🔧 Grant execute permission for gradlew
+      run: chmod +x gradlew
+      
+    - name: 🏗️ Build release
+      run: ./gradlew build
+      
+    - name: 🏷️ Get version from tag
+      id: get_version
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/v}
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+        echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+        echo "Release version: $VERSION"
+        
+    - name: 📝 Generate changelog
+      id: changelog
+      run: |
+        PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+        if [ -n "$PREVIOUS_TAG" ]; then
+          echo "Generating changelog from $PREVIOUS_TAG to HEAD"
+          CHANGELOG=$(git log ${PREVIOUS_TAG}..HEAD --pretty=format:"- %s (%an)" --no-merges)
+        else
+          echo "Generating changelog from beginning"
+          CHANGELOG=$(git log --pretty=format:"- %s (%an)" --no-merges | head -20)
+        fi
+        
+        echo "CHANGELOG<<EOF" >> $GITHUB_ENV
+        if [ -n "$CHANGELOG" ]; then
+          echo "$CHANGELOG" >> $GITHUB_ENV
+        else
+          echo "- Initial release" >> $GITHUB_ENV
+        fi
+        echo "EOF" >> $GITHUB_ENV
+        
+    - name: 🚀 Create GitHub Release
+      uses: ncipollo/release-action@v1
+      with:
+        tag: ${{ env.TAG_NAME }}
+        name: "🎉 Release ${{ env.VERSION }}"
+        body: |
+          ## 🚀 CIDR Validator ${{ env.VERSION }}
+          
+          A comprehensive Java library for CIDR notation validation, calculation, and normalization.
+          
+          ### ✨ Features
+          - ✅ CIDR validation and normalization
+          - 🔍 IP address containment checking  
+          - 📊 Network/broadcast address calculation
+          - 🧮 Subnet mask conversion
+          - 📈 IP count calculations
+          - 🔄 CIDR block splitting
+          - 🎯 RFC-compliant (/31, /32 support)
+          
+          ### 📋 Changes
+          ${{ env.CHANGELOG }}
+          
+          ### 📦 Installation
+          
+          **Gradle (Kotlin DSL)**
+          ```kotlin
+          repositories {
+              mavenCentral()
+              maven { url = uri("https://jitpack.io") }
+          }
+          
+          dependencies {
+              implementation("com.github.nohsw:cidr-validator:${{ env.VERSION }}")
+          }
+          ```
+          
+          **Maven**
+          ```xml
+          <repositories>
+              <repository>
+                  <id>jitpack.io</id>
+                  <url>https://jitpack.io</url>
+              </repository>
+          </repositories>
+          
+          <dependency>
+              <groupId>com.github.nohsw</groupId>
+              <artifactId>cidr-validator</artifactId>
+              <version>${{ env.VERSION }}</version>
+          </dependency>
+          ```
+          
+          ### 🔗 Links
+          - 📚 [Documentation](https://github.com/nohsw/cidr-validator#readme)
+          - 🧪 [JitPack Build](https://jitpack.io/#nohsw/cidr-validator/${{ env.VERSION }})
+          - 🐞 [Issue Tracker](https://github.com/nohsw/cidr-validator/issues)
+          
+        artifacts: |
+          build/libs/*.jar
+        draft: false
+        prerelease: false
+        
+    - name: 🔄 Trigger JitPack build
+      run: |
+        echo "🔄 Triggering JitPack build for version ${{ env.VERSION }}"
+        curl -s "https://jitpack.io/com/github/nohsw/cidr-validator/${{ env.VERSION }}/build.log" || echo "JitPack trigger completed"
+
+  notify:
+    name: Build Status Notification  
+    runs-on: ubuntu-latest
+    needs: [test, build]
+    if: always()
+    
+    steps:
+    - name: 📢 Build Success
+      if: needs.test.result == 'success' && needs.build.result == 'success'
+      run: |
+        echo "✅ All builds completed successfully!"
+        echo "🧪 Tests: ${{ needs.test.result }}"
+        echo "🏗️ Build: ${{ needs.build.result }}"
+        
+    - name: ❌ Build Failed
+      if: needs.test.result == 'failure' || needs.build.result == 'failure'
+      run: |
+        echo "❌ Build failed!"
+        echo "🧪 Tests: ${{ needs.test.result }}"
+        echo "🏗️ Build: ${{ needs.build.result }}"
+        exit 1 
