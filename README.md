@@ -484,7 +484,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.nohsw:cidr-validator:1.0.0")
+    implementation("com.github.sungwoong-Noh:CidrValidator:v0.0.2")
 }
 ```
 
@@ -496,7 +496,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.github.nohsw:cidr-validator:1.0.0'
+    implementation 'com.github.sungwoong-Noh:CidrValidator:v0.0.2'
 }
 ```
 
