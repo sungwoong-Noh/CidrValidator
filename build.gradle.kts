@@ -60,7 +60,7 @@ publishing {
                 developers {
                     developer {
                         id.set("nohsw")
-                        name.set("Seongwoo Noh")
+                        name.set("Seongwoog-Noh")
                         email.set("your-email@example.com")
                     }
                 }

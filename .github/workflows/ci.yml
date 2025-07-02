@@ -31,7 +31,7 @@ jobs:
         distribution: ${{ env.JAVA_DISTRIBUTION }}
         
     - name: 📦 Cache Gradle packages
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ~/.gradle/caches
@@ -81,7 +81,7 @@ jobs:
         distribution: ${{ env.JAVA_DISTRIBUTION }}
         
     - name: 📦 Cache Gradle packages
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ~/.gradle/caches
@@ -138,7 +138,7 @@ jobs:
         distribution: ${{ env.JAVA_DISTRIBUTION }}
         
     - name: 📦 Cache Gradle packages
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ~/.gradle/caches
@@ -213,7 +213,7 @@ jobs:
           }
           
           dependencies {
-              implementation("com.github.sungwoong-Noh:CidrValidator:${{ env.VERSION }}")
+              implementation("com.github.nohsw:cidr-validator:${{ env.VERSION }}")
           }
           ```
           
@@ -227,16 +227,16 @@ jobs:
           </repositories>
           
           <dependency>
-              <groupId>com.github.sungwoong-Noh</groupId>
+              <groupId>com.github.nohsw</groupId>
               <artifactId>cidr-validator</artifactId>
               <version>${{ env.VERSION }}</version>
           </dependency>
           ```
           
           ### 🔗 Links
-          - 📚 [Documentation](https://github.com/sungwoong-Noh/cidr-validator#readme)
-          - 🧪 [JitPack Build](https://jitpack.io/#sungwoong-Noh/cidr-validator/${{ env.VERSION }})
-          - 🐞 [Issue Tracker](https://github.com/sungwoong-Noh/cidr-validator/issues)
+          - 📚 [Documentation](https://github.com/nohsw/cidr-validator#readme)
+          - 🧪 [JitPack Build](https://jitpack.io/#nohsw/cidr-validator/${{ env.VERSION }})
+          - 🐞 [Issue Tracker](https://github.com/nohsw/cidr-validator/issues)
           
         artifacts: |
           build/libs/*.jar
@@ -246,7 +246,7 @@ jobs:
     - name: 🔄 Trigger JitPack build
       run: |
         echo "🔄 Triggering JitPack build for version ${{ env.VERSION }}"
-        curl -s "https://jitpack.io/com/github/sungwoong-Noh/cidr-validator/${{ env.VERSION }}/build.log" || echo "JitPack trigger completed"
+        curl -s "https://jitpack.io/com/github/nohsw/cidr-validator/${{ env.VERSION }}/build.log" || echo "JitPack trigger completed"
 
   notify:
     name: Build Status Notification  
