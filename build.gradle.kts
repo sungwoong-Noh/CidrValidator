@@ -1,9 +1,11 @@
 plugins {
-    id("java")
+    id("java-library")
+    id("maven-publish")
+    id("signing")
 }
 
-group = "swnoh"
-version = "1.0-SNAPSHOT"
+group = "com.github.nohsw"
+version = System.getenv("VERSION") ?: "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -14,6 +16,68 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter")
 }
 
+java {
+    withSourcesJar()
+    withJavadocJar()
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
 tasks.test {
     useJUnitPlatform()
+    
+    // 테스트 결과를 항상 출력
+    testLogging {
+        events("passed", "skipped", "failed")
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    }
+    
+    // JUnit 리포트 생성
+    reports {
+        junitXml.required.set(true)
+        html.required.set(true)
+    }
+}
+
+tasks.javadoc {
+    if (JavaVersion.current().isJava9Compatible) {
+        (options as StandardJavadocDocletOptions).addBooleanOption("html5", true)
+    }
+    options.encoding = "UTF-8"
+    source = sourceSets.main.get().allJava
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            from(components["java"])
+            
+            pom {
+                name.set("CIDR Validator")
+                description.set("A comprehensive Java library for CIDR notation validation, calculation, and normalization")
+                url.set("https://github.com/nohsw/cidr-validator")
+                
+                licenses {
+                    license {
+                        name.set("MIT License")
+                        url.set("https://opensource.org/licenses/MIT")
+                    }
+                }
+                
+                developers {
+                    developer {
+                        id.set("nohsw")
+                        name.set("Seongwoo Noh")
+                        email.set("your-email@example.com")
+                    }
+                }
+                
+                scm {
+                    connection.set("scm:git:git://github.com/nohsw/cidr-validator.git")
+                    developerConnection.set("scm:git:ssh://github.com/nohsw/cidr-validator.git")
+                    url.set("https://github.com/nohsw/cidr-validator")
+                }
+            }
+        }
+    }
 }
