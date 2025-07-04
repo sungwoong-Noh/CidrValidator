@@ -510,9 +510,9 @@ dependencies {
 </repositories>
 
 <dependency>
-    <groupId>com.github.nohsw</groupId>
-    <artifactId>cidr-validator</artifactId>
-    <version>1.0.0</version>
+  <groupId>com.github.sungwoong-Noh</groupId>
+  <artifactId>CidrValidator</artifactId>
+  <version>1.0.0</version>
 </dependency>
 ```
 
